@@ -1,0 +1,499 @@
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Dimensions, FlatList } from "react-native"
+import { Video } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import ModalPopUp from '../../../components/modal/Modal';
+import { Divider } from 'react-native-paper';
+import { restaurants } from './restoItems.json';
+import { useNavigation } from "@react-navigation/native";
+
+const { width, height } = Dimensions.get('screen')
+
+const SingleReel = ({ item, index, currentIndex, isDarkMode, mute, outOfBoundItems, viewableItems }) => {
+    const navigation = useNavigation()
+    const videoRef = useRef(null);
+    // const [mute, setMute] = useState(false);
+    const [like, setLike] = useState(item.isLike);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [showMore, setShowMore] = useState(false);
+    const [quantity, setQuantity] = useState(0);
+    const [restaurantDetails, setRestaurantDetails] = useState(null);
+    const [orderFoods, setOrderFoods] = useState([])
+    const toggleModal = () => {
+        setModalVisible(!modalVisible);
+    }
+    const onBuffer = buffer => {
+        console.log('buffring', buffer);
+    };
+    const onError = error => {
+        console.log('error', error);
+    };
+
+    // const toggleMute = () => {
+    //     setMute(!mute);
+    // };
+    const handleOrderPress = (restaurantName) => {
+        const res = restaurants.find((item) => item.name == restaurantName)
+        setRestaurantDetails(res);
+        setOrderFoods(res.items)
+        setModalVisible(true);
+    };
+    const handleShowMore = () => {
+        setShowMore(!showMore);
+    };
+    const handleAddPress = (menuItemIndex) => {
+        setOrderFoods((prevOrderFoods) =>
+            prevOrderFoods.map((item, index) =>
+                index === menuItemIndex ? { ...item, isAdding: true } : item
+            )
+        );
+        setQuantity(quantity + 1);
+    };
+
+    const handleIncrement = (menuItemIndex) => {
+        setOrderFoods((prevOrderFoods) =>
+            prevOrderFoods.map((item, index) =>
+                index === menuItemIndex ? { ...item, quantity: parseInt(item.quantity) + 1 } : item
+            )
+        );
+
+
+
+
+    };
+    const handleDecrement = (menuItemIndex, menuItem) => {
+        setOrderFoods((prevOrderFoods) =>
+            prevOrderFoods.map((item, index) =>
+                index === menuItemIndex ? item.quantity === 1 ? { ...item, isAdding: false } : { ...item, quantity: parseInt(item.quantity) - 1 } : item
+            )
+        );
+        if (menuItem.quantity == 1) {
+            setQuantity(quantity - 1);
+        }
+    };
+    // useEffect(() => {
+    //     return () => {
+    //         if (videoRef.current) {
+    //             videoRef.current.setStatusAsync({
+    //                 shouldPlay: false
+    //             })
+    //         }
+    //     }
+    // }, []);
+    // useEffect(() => {
+    //     videoRef.current.pauseAsync();
+    // }, [outOfBoundItems]);
+    return (
+        <View style={{ flex: 1 }}>
+
+            <TouchableOpacity style={{ flex: 1, height: height - 100, width: width }}>
+                <LinearGradient colors={['rgba(70, 75, 89, 0)', '#2C3142']} style={{ flex: 1, zIndex: 3 }}>
+
+                    <Video
+                        ref={videoRef}
+                        style={{ width: width, height: height / 1.17 }}
+                        source={item.url}
+                        resizeMode="cover"
+                        isLooping={true}
+                        isMuted={item?.url == viewableItems?.url ? true : false}
+                        shouldPlay={true}
+                        onBuffer={onBuffer}
+                        onError={onError}
+                    />
+                </LinearGradient>
+            </TouchableOpacity>
+            <View style={{ position: 'absolute', flex: 1, flexDirection: 'row', bottom: 10 }}>
+                <View style={{ marginVertical: 30, marginHorizontal: 15, height: 610, flexDirection: 'column', justifyContent: 'space-between', flex: 1, borderRadius: 4 }}>
+                    <View>
+                        <TouchableOpacity>
+                            <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 10, color: '#F8F8F8' }}>{item.connect}</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'column', alignSelf: 'flex-end' }}>
+                            <TouchableOpacity style={{ flexDirection: 'row' }}>
+                                <Image source={item.image} style={{ height: 30, width: 30, borderRadius: 30 }} />
+                                <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins-Regular', fontSize: 10, marginVertical: 5, marginLeft: 10 }}>{item.title}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => navigation.navigate('Restaurant')}>
+                                <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 14, color: '#FFFFFF', marginTop: 3 }}>{item.restaurantName}</Text>
+                                <View style={{ flexDirection: 'row', marginTop: -3 }}>
+                                    <Image source={require('../../../assets/star.png')} style={{ width: 16.5, height: 16.5 }} />
+                                    <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 10, color: '#F8F8F8', marginLeft: 5 }}>{item.ratings}</Text>
+                                    <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 10, color: '#F8F8F8', marginLeft: 5 }}>Distance {item.distance}</Text>
+                                </View>
+                                <Text style={{ fontFamily: 'Poppins-SemiBold', fontSize: 8, color: '#FFFFFF', width: 196, marginTop: 5 }}>{item.foodDescription}</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={{ flex: 1, flexDirection: 'column', alignSelf: 'flex-end', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+
+                            <TouchableOpacity style={{ marginBottom: 20 }}>
+                                <Image source={require('../../../assets/share.png')} style={{ width: 31, height: 29 }} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={{ marginBottom: 20 }}>
+                                <Image source={require('../../../assets/comment.png')} style={{ width: 31, height: 31 }} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={{ marginBottom: 20 }} onPress={() => setLike(!like)}>
+                                <Image source={require('../../../assets/heart.png')} style={{ width: 35, height: 33, tintColor: like ? 'red' : 'white', backgroundColor: like ? 'red' : 'transparent' }} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleOrderPress(item.restaurantName)}>
+                                <Text style={{
+                                    fontFamily: 'Poppins-Regular', fontSize: 20, color: '#FFFFFF', width: 113,
+                                    height: 44,
+                                    borderRadius: 6,
+                                    backgroundColor: '#E13535',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    marginTop: 20,
+                                    textAlign: 'center',
+                                    paddingTop: 5
+                                }}>Order</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </View >
+            <ModalPopUp isModalVisible={modalVisible} setModalVisible={setModalVisible} toggleModal={toggleModal} isDarkMode={isDarkMode}>
+                {restaurantDetails && (
+                    <View style={{ flex: 1 }}>
+                        <View style={{ marginVertical: '1%' }}>
+                            <View style={{ flexDirection: 'column', marginBottom: '3%' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text style={styles.bpRestName}>{restaurantDetails.name}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Image source={require('../../../assets/star.png')} style={{ width: 17.41, height: 17.41, bottom: 3 }} />
+                                        <Text style={styles.bpRestRatings}>{restaurantDetails.rating}</Text>
+                                        <Text style={styles.bprestReview}>{restaurantDetails.reviews} reviews</Text>
+                                    </View>
+                                </View>
+                                <Text style={styles.bprestoDescrip}>{restaurantDetails.restoDescrip}</Text>
+                            </View>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bpfilterContainer}>
+                                <TouchableOpacity style={{ ...styles.bpfilters1, flexDirection: 'row' }}>
+                                    <Image source={require('../../../assets/filterIcon.png')} style={{ width: 19.47, height: 17.84, position: 'relative', right: 5 }} />
+                                    <Text style={styles.bpfiltersText}>Filter</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.bpfilters}>
+                                    <Text style={styles.bpfiltersText}>Starters</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.bpfilters}>
+                                    <Text style={styles.bpfiltersText}>Main course</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.bpfilters}>
+                                    <Text style={styles.bpfiltersText}>Top Rated</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.bpfilters}>
+                                    <Text style={styles.bpfiltersText}>Main course</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </View>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {orderFoods.map((menuItem, index) => {
+                                return (
+                                    <React.Fragment key={index}>
+                                        <View style={{ flexDirection: 'row', marginVertical: '3%' }}>
+                                            <Image source={menuItem.image} style={styles.bpItemImage} />
+                                            <View style={{ flex: 1, flexDirection: 'column', marginLeft: '2%' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Image source={menuItem.type === "Veg" ? require('../../../assets/veg.png') : require('../../../assets/nonVeg.png')} style={{ width: 12.57, height: 12.57 }} />
+                                                        <Text style={styles.bpItemName}>{menuItem.ItemName}</Text>
+                                                    </View>
+                                                    <Text style={styles.bpItemcost}>${menuItem.cost}</Text>
+                                                </View>
+                                                <View style={{ flexDirection: 'row' }}>
+                                                    <Image source={require('../../../assets/star.png')} style={{ width: 14.58, height: 14.58 }} />
+                                                    <Text style={styles.bpItemRatings}>{menuItem.itemRating}</Text>
+                                                    <Text style={styles.bpItemReview}>{menuItem.itemReview} reviews</Text>
+                                                </View>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', position: 'relative' }}>
+                                                    <View>
+                                                        <Text style={styles.bpFoodDescrip} numberOfLines={showMore ? undefined : 2}>{menuItem.itemDscrp}</Text>
+                                                        {!showMore && (
+                                                            <TouchableOpacity onPress={handleShowMore}>
+                                                                <Text style={styles.bpFoDscrpMore}>MORE</Text>
+                                                            </TouchableOpacity>)}
+                                                    </View>
+                                                    {!menuItem.isAdding ? (
+                                                        <View>
+                                                            <TouchableOpacity style={menuItem.type === "Veg" ? styles.bpVegItemAddCon : styles.bpNonVegItemAddCon} onPress={() => { handleAddPress(index, menuItem) }} >
+                                                                <Text style={menuItem.type === "Veg" ? styles.bpVegItemAdd : styles.bpNonVegItemAdd}>Add</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    ) : (
+                                                        <View style={menuItem.type === "Veg" ? styles.bpVegQuantCont : styles.bpNonVegQuantCont}>
+                                                            <TouchableOpacity onPress={() => { handleDecrement(index, menuItem) }} style={{ ...styles.bpQuantbutton, left: 8 }}>
+                                                                <Text style={menuItem.type === "Veg" ? styles.bpVegbuttonText : styles.bpNonVegbuttonText}>-</Text>
+                                                            </TouchableOpacity>
+                                                            <Text style={menuItem.type === "Veg" ? styles.bpVegQuant : styles.bpNonVegQuant}>{menuItem.quantity}</Text>
+                                                            <TouchableOpacity onPress={() => { handleIncrement(index) }} style={{ ...styles.bpQuantbutton, right: 7 }}>
+                                                                <Text style={menuItem.type === "Veg" ? styles.bpVegbuttonText : styles.bpNonVegbuttonText}>+</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        </View>
+                                        {/* <Divider key={`divider_${index}`} style={styles.bpDivider} /> */}
+                                        <View style={styles.menuItemDivider} />
+                                    </React.Fragment>
+
+                                )
+                            })}
+                            <View style={{ height: 100 }} />
+                        </ScrollView>
+                    </View>
+                )}
+                {quantity > 0 && (
+                    <View style={styles.bpAddItemPopup}>
+                        <View style={styles.bpAddpopCont}>
+                            <Text style={styles.bpAddItemText}>{quantity} item added</Text>
+                            <View>
+                                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <Text onPress={() => navigation.navigate('Profileheader')} style={styles.bpReviewCart}>Review Cart</Text>
+                                    <Image source={require('../../../assets/rightArrow.png')} style={styles.bpAddRCartRight} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                )}
+            </ModalPopUp>
+        </View >
+    )
+}
+
+export default SingleReel;
+
+const styles = StyleSheet.create({
+    menuItemDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#D9D9D9',
+        borderStyle: 'dashed',
+        marginVertical: 5,
+    },
+    bpfilterContainer: {
+        height: '14%',
+        width: '100%',
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#E5E8F1',
+        backgroundColor: '#FAFCFF',
+        alignContent: 'center'
+    },
+    bpRestName: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 18
+    },
+    bpRestRatings: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 10,
+        color: '#2C3142',
+        right: 5,
+        paddingRight: '3%',
+        paddingLeft: '3%'
+    },
+    bprestReview: {
+        fontFamily: 'Poppins-Medium',
+        fontSize: 10,
+        color: '#2C3142',
+        marginRight: 0
+    },
+    bprestoDescrip: {
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 9,
+        color: '#6D7383'
+    },
+    bpfilters1: {
+        width: 77,
+        height: 29,
+        borderRadius: 22,
+        backgroundColor: '#FFFFFF',
+        elevation: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: '2.2%'
+    },
+    bpfilters: {
+        width: 77,
+        height: 29,
+        borderRadius: 22,
+        marginLeft: 10,
+        backgroundColor: '#FFFFFF',
+        elevation: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: '2.2%'
+    },
+    bpfiltersText: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 10,
+        color: '#50555C'
+    },
+    bpItemImage: {
+        width: 95.5,
+        height: 92.15,
+        borderRadius: 14
+    },
+    bpItemName: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 14,
+        color: '#2C3142',
+        paddingLeft: '2%'
+    },
+    bpItemcost: {
+        fontFamily: 'Poppins-Medium',
+        fontSize: 18,
+        color: '#2C3142'
+    },
+    bpItemRatings: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 10,
+        color: '#2C3142',
+        paddingLeft: '2%'
+    },
+    bpItemReview: {
+        fontFamily: 'Poppins-Medium',
+        fontSize: 10,
+        color: '#2C3142',
+        paddingLeft: '3%'
+    },
+    bpFoodDescrip: {
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 7,
+        color: '#6D7383',
+        width: 154.14,
+    },
+    bpFoDscrpMore: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 7,
+        color: '#2C3142'
+    },
+    bpVegItemAdd: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 16,
+        color: '#02A750'
+    },
+    bpNonVegItemAdd: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 16,
+        color: '#E13535'
+    },
+    bpVegItemAddCon: {
+        width: 70,
+        height: 27.26,
+        borderWidth: 1,
+        borderRadius: 6,
+        borderColor: '#02A750',
+        alignItems: 'center',
+    },
+    bpNonVegItemAddCon: {
+        width: 70,
+        height: 27.26,
+        borderWidth: 1,
+        borderRadius: 6,
+        borderColor: '#E13535',
+        alignItems: 'center',
+    },
+    bpDivider: {
+        borderStyle: 'dashed',
+        borderColor: '#D9D9D9',
+        borderWidth: 1
+    },
+
+    bpQuantbutton: {
+        position: 'absolute',
+        padding: 1,
+    },
+    bpVegbuttonText: {
+        color: '#02A750',
+        fontSize: 22,
+        fontWeight: 'bold',
+        bottom: 2
+    },
+    bpNonVegbuttonText: {
+        color: '#E13535',
+        fontSize: 20,
+        fontWeight: 'bold',
+        bottom: 2
+    },
+    bpVegQuant: {
+        position: 'absolute',
+        color: '#02A750',
+        fontFamily: 'Poppins-Medium',
+        fontSize: 21,
+        marginHorizontal: 10,
+        left: '31%',
+    },
+    bpNonVegQuant: {
+        position: 'absolute',
+        color: '#E13535',
+        fontFamily: 'Poppins-Medium',
+        fontSize: 21,
+        marginHorizontal: 10,
+        left: '31%',
+    },
+    bpNonVegQuantCont: {
+        flexDirection: 'row',
+        position: 'absolute',
+        right: 0,
+        borderWidth: 1,
+        bottom: '40%',
+        width: 84,
+        height: 29,
+        borderRadius: 6,
+        alignItems: 'center',
+        borderColor: '#E13535',
+        backgroundColor: '#FFF1F1'
+    },
+    bpVegQuantCont: {
+        flexDirection: 'row',
+        position: 'absolute',
+        right: 1,
+        borderWidth: 1,
+        bottom: '40%',
+        width: 84,
+        height: 29,
+        borderRadius: 6,
+        alignItems: 'center',
+        borderColor: '#02A750',
+        backgroundColor: '#F2FFF8'
+    },
+    bpAddItemPopup: {
+        flex: 1,
+        position: 'absolute',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        height: 74,
+        width: width,
+        backgroundColor: '#E13535',
+        borderTopRightRadius: 14,
+        borderTopLeftRadius: 14,
+        bottom: 0
+    },
+    bpAddpopCont: {
+        flex: 1,
+        flexDirection: 'row',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginHorizontal: 20
+    },
+    bpAddItemText: {
+        fontFamily: 'Poppins-Medium',
+        fontSize: 16,
+        color: '#FFFFFF',
+        justifyContent: 'flex-start'
+    },
+    bpReviewCart: {
+        fontFamily: 'Poppins-Medium',
+        fontSize: 16,
+        color: '#F9C2C2',
+        marginRight: 5,
+    },
+    bpAddRCartRight: {
+        width: 10,
+        height: 17,
+        bottom: 2,
+    },
+})
